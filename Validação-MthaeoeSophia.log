@@ -1,0 +1,78 @@
+Nome: Matheo e Sophia
+Atividade02 - Segurança
+Dia: 26/08/2025.
+
+1-Quais vulnerabilidades você encontrou no código original?
+Permite qualquer tipo e tamanho de arquivo, sem tratamento de erros detalhado e permite sobrescrever arquivos.
+
+| Vulnerabilidade                                 | Probabilidade | Impacto | Risco (P x I) | Descrição do Impacto                                              |
+| ------------------------------------------------| ------------- | ------- | -------       | ----------------------------------------------------------------- |
+| Não valida o tipo de arquivo                    | 10            | 10      | 10            | Permite upload de qualquer arquivo, inclusive scripts maliciososr |
+| Não limita o tamanho do arquivo                 | 5             | 10      | 10            | Pode derrubar o servidor (DoS) enviando arquivos enormes.         |
+| Sobrescrever arquivos existentes                | 5             | 10      | 10            | Se um arquivo com o mesmo nome já existir, ele será substituído.  |
+| Falta de verificação adequada no nome do arquivo| 5             | 10      | 10            | Possível acesso indevido via paths                                |
+| Sem tratamento de erros detalhado               | 5             | 10      | 10            | Não há mensagens específicas para diferentes falhas.              |
+
+
+2-Qual vulnerabilidade apresentou maior risco (P x I)?
+Upload de arquivos duvidosos com possibilidade de execução remota.
+
+3-Qual seria o impacto real se essa falha fosse explorada em uma empresa?
+Ataques graves, como invasão do servidor, roubo de dados, ou destruição do sistema.
+
+4-Como você corrige as falhas encontradas?
+Validando tipos e tamanho e tratando erros.
+
+5-Após aplicar o PDCA, quais melhorias foram efetivas?
+Segurança reforçada contra uploads perigosos, controle melhorado e prevenção de ataques.
+
+<?php
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $upload_dir = "uploads/";
+    $max_file_size = 2 * 1024 * 1024; // 2MB
+    $allowed_types = ['image/jpeg', 'image/png', 'image/gif'];
+
+    if (!isset($_FILES['file'])) {
+        echo "Nenhum arquivo enviado.";
+        exit;
+    }
+
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+
+    $file_tmp = $_FILES['file']['tmp_name'];
+    $file_size = $_FILES['file']['size'];
+    $file_name = basename($_FILES['file']['name']);
+    $file_name = preg_replace("/[^a-zA-Z0-9\.\-_]/", "", $file_name);
+    if (empty($file_name)) {
+        $file_name = "file_" . time();
+    }
+
+    $image_info = getimagesize($file_tmp);
+    if ($image_info === false) {
+        echo "Arquivo não é uma imagem válida.";
+        exit;
+    }
+    $file_type = $image_info['mime'];
+
+    if (!in_array($file_type, $allowed_types)) {
+        echo "Tipo de arquivo não permitido.";
+        exit;
+    }
+
+    if ($file_size > $max_file_size) {
+        echo "Arquivo muito grande. Máximo permitido: 2MB.";
+        exit;
+    }
+
+    $new_name = time() . "_" . $file_name;
+    $destination = $upload_dir . $new_name;
+
+    if (move_uploaded_file($file_tmp, $destination)) {
+        echo "Arquivo enviado com sucesso!";
+    } else {
+        echo "Erro ao enviar arquivo.";
+    }
+}
+?>
